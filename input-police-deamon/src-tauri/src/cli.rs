@@ -2,22 +2,17 @@ use std::env;
 use std::net::UdpSocket;
 
 fn main() {
-    // 実行時の引数を取得する
     let args: Vec<String> = env::args().collect();
+    let args_str = args.join(" ");
 
-    // 引数がない場合（obtainIMCmd として呼ばれた場合）
-    if args.len() == 1 {
-        // VSCodeに「今は日本語(1041)だよ」と嘘をつき、必ず切り替え処理を誘発させる
-        print!("1041");
-        return;
+    // VSCodeから切り替えの引数（1033）を渡された場合
+    if args_str.contains("1033") {
+        if let Ok(socket) = UdpSocket::bind("0.0.0.0:0") {
+            let _ = socket.send_to(b"ESC", "127.0.0.1:51235");
+        }
+        println!("1033"); // 改行付きで出力してVSCodeに確実に読み取らせる
+    } else {
+        // 現在の状態を聞かれた場合（obtainIMCmd）は、日本語であると答える
+        println!("1041"); // 同上
     }
-
-    // 引数がある場合（switchIMCmd として呼ばれた場合）
-    // デーモンに向けて「ESC」シグナルをUDPで送信する
-    if let Ok(socket) = UdpSocket::bind("0.0.0.0:0") {
-        let _ = socket.send_to(b"ESC", "127.0.0.1:51234");
-    }
-    
-    // 切り替え完了の合図として英数(1033)を返す
-    print!("1033");
 }
